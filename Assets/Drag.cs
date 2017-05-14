@@ -8,9 +8,11 @@ public class Drag : MonoBehaviour {
     float posY;
     float Impulse;
     int i = 0;
-    Vector3 Start;
+    Vector3 Begin;
+    Vector3? Stop=null;
     Vector3 dist;
     Vector3[] Points = null;
+    Color color;
     class Line
     {
         public float a;
@@ -22,6 +24,8 @@ public class Drag : MonoBehaviour {
         }
     }
     LineRenderer lineRenderer;
+    GameObject MainCamera;
+    HashSet<GameObject> pretend = new HashSet<GameObject>();
     #endregion
 
     #region функции
@@ -51,7 +55,7 @@ public class Drag : MonoBehaviour {
     {
         Line tr = new Line(i, j);
         lineRenderer.SetPosition(0, transform.position);
-        if (Start.x == transform.position.x) lineRenderer.SetPosition(1, new Vector3(transform.position.x, 6, 1));
+        if (Begin.x == transform.position.x) lineRenderer.SetPosition(1, new Vector3(transform.position.x, 6, 1));
         else
         {
             lineRenderer.SetPosition(1, new Vector3((transform.position.x > 0 ? -8.5f : 8.5f), tr.a*(transform.position.x > 0 ? -8.5f : 8.5f) +tr.b, 0));
@@ -59,11 +63,36 @@ public class Drag : MonoBehaviour {
         }
     }
 
+    public void findCorrectNeightborn(Color color)
+    {
+        GameObject[] All = GameObject.FindGameObjectsWithTag("Circle");
+        List<GameObject> Neighborn = new List<GameObject>();
+        foreach(GameObject o in All)
+        {
+            if (Mathf.Abs(o.transform.position.x - transform.position.x) <= 1&&Mathf.Abs(o.transform.position.y-transform.position.y)<=1)
+            {
+                Neighborn.Add(o);
+            }
+        }
+        foreach(GameObject p in Neighborn)
+        {
+            if (p.GetComponent<SpriteRenderer>().color==color)
+            {
+                pretend.Add(p);
+            }
+        }
+    }
+
     #endregion
 
-   private void OnMouseDown()
+    private void Start()
     {
-        Start = transform.position;
+        MainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+    }
+
+    private void OnMouseDown()
+    {
+        Begin = transform.position;
         lineRenderer = GetComponent<LineRenderer>();
         PosInit();
         lineRenderer.enabled = true;
@@ -72,8 +101,8 @@ public class Drag : MonoBehaviour {
    private void OnMouseDrag()
     {
         CarryBall();
-        RenderLine(Start, transform.position);
-        Impulse = meterImpulse(Start, transform.position);
+        RenderLine(Begin, transform.position);
+        Impulse = meterImpulse(Begin, transform.position);
     }
 
     private void OnMouseUp()
@@ -81,10 +110,7 @@ public class Drag : MonoBehaviour {
         Points = new Vector3[3];
         lineRenderer.GetPositions(Points);
         lineRenderer.enabled = false;
-        foreach(Vector3 p in Points)
-        {
-            Debug.Log(p);
-        }
+        
     }
 
     private void Update()
@@ -95,7 +121,28 @@ public class Drag : MonoBehaviour {
             Vector3 dir = (Points[i + 1] - transform.position).normalized * Impulse * Time.deltaTime * 10;
             transform.Translate(dir); // Vector3.Lerp(transform.position, Points[i+1], Vector3.Distance(Start,Dash)*Time.deltaTime);
             if (transform.position.x > 8 || transform.position.x < -8) i++;
+            if (Stop != null) { Destroy(this.gameObject); }
+        }
+    }
 
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        Stop = transform.position;
+        color = GetComponent<SpriteRenderer>().color;
+        MainCamera.GetComponent<InstBlock>().Void = false;
+    }
+
+    private void OnDestroy()
+    {
+        MainCamera.GetComponent<InstBlock>().Circle.GetComponent<SpriteRenderer>().color = color;
+        Instantiate(MainCamera.GetComponent<InstBlock>().Circle, (Vector3)Stop, Quaternion.identity);
+        Stop = null;
+        findCorrectNeightborn(color);
+        if (pretend.Count > 2)
+            pretend.Add(this.gameObject);
+        foreach(GameObject o in pretend)
+        {
+            Destroy(o);
         }
     }
 

@@ -9,6 +9,7 @@ public class InstBlock : MonoBehaviour {
     //игровой объект
     public GameObject Circle;
     public GameObject Cue;
+    public bool Void=false;
     //структура цвет
     struct RGBcolor
     {
@@ -54,16 +55,22 @@ public class InstBlock : MonoBehaviour {
     {
         var pole = XDocument.Parse(System.IO.File.ReadAllText("block.xml")).Descendants("Ball").ToList<XElement>();
         Cue.GetComponent<SpriteRenderer>().color = parseColor((pole[Random.Range(0, pole.Count)].Attribute("color").Value).Substring(5, 26));
-        Instantiate(Cue,new Vector3(0,-3,0),Quaternion.identity);
+        Instantiate(Cue,new Vector3(0,-5,0),Quaternion.identity);
+        Void = true;
     }
+
     #endregion
 
     void Start() {
 
         BildPole();
-        CueBall();
     }
 
+    private void Update()
+    {
+        if (Void == false) CueBall();
+        
+    }
 
 
 }
