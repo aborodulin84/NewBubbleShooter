@@ -139,10 +139,12 @@ public class Drag : MonoBehaviour {
         Stop = null;
         findCorrectNeightborn(color);
         if (pretend.Count > 2)
-            pretend.Add(this.gameObject);
-        foreach(GameObject o in pretend)
         {
-            Destroy(o);
+            pretend.Add(this.gameObject);
+            foreach (GameObject o in pretend)
+            {
+                Destroy(o);
+            }
         }
     }
 
